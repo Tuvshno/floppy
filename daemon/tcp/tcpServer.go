@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func main() {
+func startTCPServer() {
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: go run server.go <filename>")
 		return

@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func main() {
+func startTCPClient() {
 
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: go run client.go <outputfilename>")

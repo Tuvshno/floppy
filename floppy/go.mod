@@ -1,6 +1,6 @@
 module github.com/tuvshno/distributed-file-storage
 
-go 1.19
+go 1.22.3
 
 require github.com/spf13/cobra v1.8.0
 
