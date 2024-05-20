@@ -1,5 +1,4 @@
-module github.com/tuvshno/distributed-file-storage
-
+module github.com/tuvshno/floppy/cli
 go 1.22.3
 
 require github.com/spf13/cobra v1.8.0

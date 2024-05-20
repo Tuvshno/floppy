@@ -1,10 +1,21 @@
 package main
 
-import "net/http"
+//router.go
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/tuvshno/floppy/daemon/upload"
+)
 
 func loadRoutes(router *http.ServeMux) {
-
-	handler := &upload.Handler{}
+	fmt.Println("Inside loadroutes")
+	handler := upload.Handler{}
 
 	router.HandleFunc("POST /upload", handler.Upload)
+}
+
+func hello() {
+	fmt.Println("hello")
 }

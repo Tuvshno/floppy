@@ -1,5 +1,7 @@
 package main
 
+//server.go
+
 import (
 	"fmt"
 	"log"
@@ -14,6 +16,8 @@ func handle(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/", handle)
+	hello()
+	loadRoutes(router)
 
 	server := http.Server{
 		Addr:    ":8080",
@@ -21,5 +25,5 @@ func main() {
 	}
 
 	fmt.Println("Server Listening on Port :8080")
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 }
