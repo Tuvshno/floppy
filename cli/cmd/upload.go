@@ -17,6 +17,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// Progress Reader is a struct that implements the io.Reader to show progress of an upload
+type ProgressReader struct {
+	io.Reader
+	Total    int64
+	Current  int64
+	FileSize int64
+}
+
+// Read overides the io.Read interface to update the current bytes read
+func (pr *ProgressReader) Read(p []byte) (int, error) {
+	n, err := pr.Reader.Read(p)
+	pr.Current += int64(n)
+	pr.updateProgress()
+	return n, err
+}
+
+// updateProgress pritns the current progress of the upload to the terminal
+func (pr *ProgressReader) updateProgress() {
+	percentage := float64(pr.Current) / float64(pr.FileSize) * 100
+	fmt.Printf("\rUploading... %d/%d bytes (%.2f%%)", pr.Current, pr.FileSize, percentage)
+}
+
 // uploadCmd represents the upload command
 var uploadCmd = &cobra.Command{
 	Use:   "upload [file path]",
@@ -60,6 +82,13 @@ var uploadCmd = &cobra.Command{
 		}
 		defer file.Close()
 
+		fileInfo, err := file.Stat()
+		if err != nil {
+			fmt.Printf("Failed getting file stats %v\n", err)
+			return
+		}
+		fileSize := fileInfo.Size()
+
 		body := &bytes.Buffer{}
 		writer := multipart.NewWriter(body)
 		part, err := writer.CreateFormFile("file", filepath.Base(absPath))
@@ -68,7 +97,12 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		_, err = io.Copy(part, file)
+		progressReader := &ProgressReader{
+			Reader:   file,
+			FileSize: fileSize,
+		}
+
+		_, err = io.Copy(part, progressReader)
 		if err != nil {
 			fmt.Println("Failed to copy file content %v\n", err)
 			return
@@ -108,7 +142,7 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println("Successfully uploaded file: %s\n", respBody)
+		fmt.Printf("\nSuccessfully uploaded file: %s\n", string(respBody))
 
 	},
 }

@@ -3,19 +3,14 @@ package main
 //router.go
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/tuvshno/floppy/daemon/upload"
 )
 
+// loadRoutes loads the routes from specific handlers to the main servemux multiplexer
 func loadRoutes(router *http.ServeMux) {
-	fmt.Println("Inside loadroutes")
 	handler := upload.Handler{}
 
 	router.HandleFunc("POST /upload", handler.Upload)
-}
-
-func hello() {
-	fmt.Println("hello")
 }

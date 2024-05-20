@@ -16,7 +16,6 @@ func handle(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/", handle)
-	hello()
 	loadRoutes(router)
 
 	server := http.Server{
