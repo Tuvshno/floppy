@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/tuvshno/floppy/daemon/types"
@@ -36,6 +37,18 @@ func (h *Handler) Store(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Metadata stored successfully"))
 }
 
+func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+	log.Println("Recieved List Request ", r.Method)
+
+	files, err := h.getMetadata()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(files)
+}
+
 func (h *Handler) saveMetadata(metadata types.FileMetadata) error {
 	fmt.Println(metadata)
 	_, err := h.DB.Exec(`
@@ -47,4 +60,36 @@ func (h *Handler) saveMetadata(metadata types.FileMetadata) error {
 	}
 	fmt.Println("Sucessfully Stored Metadata")
 	return nil
+}
+
+func (h *Handler) getMetadata() ([]types.FileMetadata, error) {
+	rows, err := h.DB.Query(`SELECT id, filename, size, upload_at, file_path FROM files`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save metadata: %v", err)
+	}
+	defer rows.Close()
+
+	var files []types.FileMetadata
+	for rows.Next() {
+		var file types.FileMetadata
+		var uploadAt string
+
+		err := rows.Scan(&file.ID, &file.Filename, &file.Size, &uploadAt, &file.FilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+
+		file.UploadAt, err = time.Parse(time.RFC3339, uploadAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse upload time: %v", err)
+		}
+
+		files = append(files, file)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %v", err)
+	}
+
+	return files, nil
 }

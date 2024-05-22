@@ -16,5 +16,7 @@ func loadRoutes(router *http.ServeMux, db *sql.DB) {
 	storageHandler := storage.Handler{DB: db}
 
 	router.HandleFunc("POST /upload", uploadHandler.Upload)
+
+	router.HandleFunc("GET /storage", storageHandler.List)
 	router.HandleFunc("POST /storage", storageHandler.Store)
 }
