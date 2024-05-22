@@ -84,7 +84,6 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	request, err := http.NewRequest("POST", "http://localhost:8080/storage", bytes.NewBuffer(jsonMetadata))
-	request.Header.Set("X-Custom-Header", "myvalue")
 	request.Header.Set("Content-Type", "application/json")
 	if err != nil {
 		fmt.Printf("Failed to create storage request %v\n", err)

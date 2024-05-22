@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/tuvshno/floppy/daemon/storage"
 )
 
 func handle(w http.ResponseWriter, r *http.Request) {
@@ -16,7 +18,15 @@ func handle(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("/", handle)
-	loadRoutes(router)
+
+	db, err := storage.InitDB("files.db")
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
+	log.Print("Initiated DB")
+	loadRoutes(router, db)
 
 	server := http.Server{
 		Addr:    ":8080",
