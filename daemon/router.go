@@ -5,12 +5,15 @@ package main
 import (
 	"net/http"
 
+	"github.com/tuvshno/floppy/daemon/storage"
 	"github.com/tuvshno/floppy/daemon/upload"
 )
 
 // loadRoutes loads the routes from specific handlers to the main servemux multiplexer
 func loadRoutes(router *http.ServeMux) {
-	handler := upload.Handler{}
+	uploadHandler := upload.Handler{}
+	storageHandler := storage.Handler{}
 
-	router.HandleFunc("POST /upload", handler.Upload)
+	router.HandleFunc("POST /upload", uploadHandler.Upload)
+	router.HandleFunc("POST /storage", storageHandler.Store)
 }

@@ -104,19 +104,19 @@ var uploadCmd = &cobra.Command{
 
 		_, err = io.Copy(part, progressReader)
 		if err != nil {
-			fmt.Println("Failed to copy file content %v\n", err)
+			fmt.Printf("Failed to copy file content %v\n", err)
 			return
 		}
 
 		err = writer.Close()
 		if err != nil {
-			fmt.Println("Failed to close writer %v\n", err)
+			fmt.Printf("Failed to close writer %v\n", err)
 			return
 		}
 
 		request, err := http.NewRequest("POST", "http://localhost:8080/upload", body)
 		if err != nil {
-			fmt.Println("Failed to create request %v\n", err)
+			fmt.Printf("Failed to create request %v\n", err)
 		}
 		request.Header.Add("Content-Type", writer.FormDataContentType())
 
@@ -126,19 +126,19 @@ var uploadCmd = &cobra.Command{
 
 		response, err := client.Do(request)
 		if err != nil {
-			fmt.Println("Failed to execute request %v\n", err)
+			fmt.Printf("Failed to execute request %v\n", err)
 			return
 		}
 		defer response.Body.Close()
 
 		if response.StatusCode != http.StatusOK {
-			fmt.Println("Failed to upload file, status code %d\n", response.StatusCode)
+			fmt.Printf("Failed to upload file, status code %d\n", response.StatusCode)
 			return
 		}
 
 		respBody, err := io.ReadAll(response.Body)
 		if err != nil {
-			fmt.Println("Failed to read response body %v\n", err)
+			fmt.Printf("Failed to read response body %v\n", err)
 			return
 		}
 
