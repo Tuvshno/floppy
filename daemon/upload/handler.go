@@ -38,6 +38,12 @@ func (pr *ProgressReader) updateProgress() {
 	fmt.Printf("\rUploading... %d/%d bytes (%.2f%%)", pr.Current, pr.FileSize, percentage)
 }
 
+// Metadata holds the struct recieved from the client
+type Metadata struct {
+	FilePath string `json:"file_path"`
+}
+
+// Upload recieves a POST request that uploads the given file inside the file form to the daemon
 func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	log.Println("Recieved Upload Request ", r.Method)
 	file, header, err := r.FormFile("file")
@@ -70,11 +76,24 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("File Uploaded Successfully"))
 	fmt.Println("\nFile Uploaded")
 
+	metadataStr := r.FormValue("metadata")
+	if metadataStr == "" {
+		http.Error(w, "Metadata not provided", http.StatusBadRequest)
+		return
+	}
+
+	var clientMetadata Metadata
+	err = json.Unmarshal([]byte(metadataStr), &clientMetadata)
+	if err != nil {
+		http.Error(w, "Failed to unmarshal metadata", http.StatusInternalServerError)
+		return
+	}
+
 	metadata := types.FileMetadata{
 		Filename: filename,
 		Size:     header.Size,
 		UploadAt: time.Now(),
-		FilePath: "uploaded_file" + ext,
+		FilePath: clientMetadata.FilePath,
 	}
 
 	jsonMetadata, err := json.Marshal(metadata)

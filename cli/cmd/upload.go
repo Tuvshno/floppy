@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -23,6 +24,10 @@ type ProgressReader struct {
 	Total    int64
 	Current  int64
 	FileSize int64
+}
+
+type Metadata struct {
+	FilePath string `json:"file_path"`
 }
 
 // Read overides the io.Read interface to update the current bytes read
@@ -105,6 +110,25 @@ var uploadCmd = &cobra.Command{
 		_, err = io.Copy(part, progressReader)
 		if err != nil {
 			fmt.Printf("Failed to copy file content %v\n", err)
+			return
+		}
+
+		metadata := Metadata{FilePath: absPath}
+		metadataJSON, err := json.Marshal(metadata)
+		if err != nil {
+			fmt.Printf("Failed to marshal metadata %v\n", err)
+			return
+		}
+
+		metadataPart, err := writer.CreateFormField("metadata")
+		if err != nil {
+			fmt.Printf("Failed to create form field for metadata %v\n", err)
+			return
+		}
+
+		_, err = metadataPart.Write(metadataJSON)
+		if err != nil {
+			fmt.Printf("Failed to write metadata %v\n", err)
 			return
 		}
 
