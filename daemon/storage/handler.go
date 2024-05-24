@@ -88,7 +88,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if metadata.FilePath != "" {
-		conditions = append(conditions, "`File Path` = ?")
+		conditions = append(conditions, "file_path = ?")
 		args = append(args, metadata.FilePath)
 	}
 
@@ -123,7 +123,6 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) saveMetadata(metadata types.FileMetadata) error {
-	fmt.Println(metadata)
 	_, err := h.DB.Exec(`
 		INSERT INTO files (filename, size, upload_at, file_path)
 		VALUES (?,?,?,?)`,
@@ -131,7 +130,6 @@ func (h *Handler) saveMetadata(metadata types.FileMetadata) error {
 	if err != nil {
 		return fmt.Errorf("failed to save metadata: %v", err)
 	}
-	fmt.Println("Sucessfully Stored Metadata")
 	return nil
 }
 

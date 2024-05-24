@@ -3,7 +3,6 @@ package main
 //server.go
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -33,6 +32,6 @@ func main() {
 		Handler: router,
 	}
 
-	fmt.Println("Server Listening on Port :8080")
+	log.Println("Server Listening on Port :8080")
 	log.Fatal(server.ListenAndServe())
 }

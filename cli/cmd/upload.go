@@ -52,7 +52,6 @@ var uploadCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		userFilePath := args[0]
-		fmt.Println("upload called with file", args[0])
 
 		isWSL, err := cmd.Flags().GetBool("wsl")
 		if err != nil {
@@ -73,7 +72,6 @@ var uploadCmd = &cobra.Command{
 			fmt.Printf("Failed to get absolute path %v\n", err)
 			return
 		}
-		fmt.Println("Absolute file path:", absPath)
 
 		if _, err := os.Stat(absPath); os.IsNotExist(err) {
 			fmt.Println("File does not exist")
@@ -141,6 +139,7 @@ var uploadCmd = &cobra.Command{
 		request, err := http.NewRequest("POST", "http://localhost:8080/upload", body)
 		if err != nil {
 			fmt.Printf("Failed to create request %v\n", err)
+			return
 		}
 		request.Header.Add("Content-Type", writer.FormDataContentType())
 
@@ -166,7 +165,7 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Printf("\nSuccessfully uploaded file: %s\n", string(respBody))
+		fmt.Printf("\n%s\n", string(respBody))
 
 	},
 }

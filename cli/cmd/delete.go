@@ -26,7 +26,7 @@ var deleteCmd = &cobra.Command{
 		filename, _ := cmd.Flags().GetString("name")
 		size, _ := cmd.Flags().GetInt64("size")
 		date, _ := cmd.Flags().GetString("date")
-		filepath, _ := cmd.Flags().GetString("filepath")
+		filepath, _ := cmd.Flags().GetString("path")
 
 		if id == 0 && filename == "" && size == 0 && date == "" && filepath == "" {
 			fmt.Println("You must provide at least one flag for --id, --filename, --size, --date, or --filepath")
@@ -106,5 +106,5 @@ func init() {
 	deleteCmd.Flags().String("name", "", "filename of the file you want to delete")
 	deleteCmd.Flags().Int64("size", 0, "size of the file you want to delete")
 	deleteCmd.Flags().String("date", "", "date of the file you want to delete (YYYY-MM-DD)")
-	deleteCmd.Flags().String("filepath", "", "filepath of the file you want to delete")
+	deleteCmd.Flags().String("path", "", "filepath of the file you want to delete")
 }

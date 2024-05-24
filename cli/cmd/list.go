@@ -70,4 +70,9 @@ func displayFiles(files []types.FileMetadata) {
 	for _, file := range files {
 		fmt.Fprintf(w, "%d\t%s\t%d\t%s\t%s\n", file.ID, file.Filename, file.Size, file.UploadAt, file.FilePath)
 	}
+
+	if len(files) == 0 {
+		fmt.Fprint(w, "No files currently in daemon\n")
+
+	}
 }
