@@ -19,4 +19,5 @@ func loadRoutes(router *http.ServeMux, db *sql.DB) {
 
 	router.HandleFunc("GET /storage", storageHandler.List)
 	router.HandleFunc("POST /storage", storageHandler.Store)
+	router.HandleFunc("DELETE /storage", storageHandler.Delete)
 }

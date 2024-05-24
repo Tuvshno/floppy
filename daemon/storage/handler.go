@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -47,6 +48,78 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(files)
+}
+
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
+	log.Println("Recieved Delete Request ", http.MethodDelete)
+
+	var metadata types.FileMetadata
+	err := json.NewDecoder(r.Body).Decode(&metadata)
+	if err != nil {
+		http.Error(w, "Failed to decode metadata", http.StatusInternalServerError)
+		return
+	}
+
+	query := "DELETE FROM files WHERE "
+	args := []interface{}{}
+	conditions := []string{}
+
+	if metadata.ID != 0 {
+		conditions = append(conditions, "ID = ?")
+		args = append(args, metadata.ID)
+	}
+	if metadata.Filename != "" {
+		conditions = append(conditions, "Filename = ?")
+		args = append(args, metadata.Filename)
+	}
+	if metadata.Size != 0 {
+		conditions = append(conditions, "Size = ?")
+		args = append(args, metadata.Size)
+	}
+	if !metadata.UploadAt.IsZero() {
+		if metadata.UploadAt.Hour() == 0 && metadata.UploadAt.Minute() == 0 && metadata.UploadAt.Second() == 0 {
+			startOfDay := metadata.UploadAt.Format("2006-01-02 15:04:05 -0700 EDT")
+			endOfDay := metadata.UploadAt.Add(24 * time.Hour).Format("2006-01-02 15:04:05 -0700 EDT")
+			conditions = append(conditions, "upload_at >= ? AND upload_at < ?")
+			args = append(args, startOfDay, endOfDay)
+		} else {
+			conditions = append(conditions, "upload_at = ?")
+			args = append(args, metadata.UploadAt.Format("2006-01-02 15:04:05 -0700 EDT"))
+		}
+	}
+	if metadata.FilePath != "" {
+		conditions = append(conditions, "`File Path` = ?")
+		args = append(args, metadata.FilePath)
+	}
+
+	if len(conditions) == 0 {
+		http.Error(w, "No conditions were given", http.StatusBadRequest)
+		return
+	}
+
+	query += strings.Join(conditions, " AND ")
+
+	log.Printf("%s %s \n", query, args)
+
+	result, err := h.DB.Exec(query, args...)
+	if err != nil {
+		http.Error(w, "Failed to execute query", http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		http.Error(w, "Failed to retrieve rows affected", http.StatusInternalServerError)
+		return
+	}
+
+	if rowsAffected == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("No Files matched given flags"))
+	} else {
+		w.Write([]byte(fmt.Sprintf("Successfully delete %d file(s)", rowsAffected)))
+	}
+
 }
 
 func (h *Handler) saveMetadata(metadata types.FileMetadata) error {
