@@ -2,7 +2,9 @@
 
 ## A Personal File Transfer System
 
-Floppy is a personal file transfer system that allows you to easily send small and large files between your laptop, computers, and phone without the restrictions of cloud services such as Google Drive or Dropbox.
+Floppy is a personal file transfer system that allows you to easily send small and large files between your laptop, computers, and phone without the restrictions of cloud services such as Google Drive or Dropbox. 
+
+The name is inspired by the floppy disk where you had your own files that were on a transferable extrnal disk!
 
 ### Overview
 
