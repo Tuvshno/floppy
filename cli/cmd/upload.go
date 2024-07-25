@@ -1,14 +1,13 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -30,7 +29,7 @@ type Metadata struct {
 	FilePath string `json:"file_path"`
 }
 
-// Read overides the io.Read interface to update the current bytes read
+// Read overrides the io.Read interface to update the current bytes read
 func (pr *ProgressReader) Read(p []byte) (int, error) {
 	n, err := pr.Reader.Read(p)
 	pr.Current += int64(n)
@@ -38,17 +37,35 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 	return n, err
 }
 
-// updateProgress pritns the current progress of the upload to the terminal
+// updateProgress prints the current progress of the upload to the terminal
 func (pr *ProgressReader) updateProgress() {
 	percentage := float64(pr.Current) / float64(pr.FileSize) * 100
 	fmt.Printf("\rUploading... %d/%d bytes (%.2f%%)", pr.Current, pr.FileSize, percentage)
+}
+
+// GetLocalIP retrieves the non-loopback, non-link-local IP address of the host machine
+func GetLocalIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+
+	for _, address := range addrs {
+		if ipNet, ok := address.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil && !ipNet.IP.IsLinkLocalUnicast() {
+				return ipNet.IP.String(), nil
+			}
+		}
+	}
+
+	return "", errors.New("unable to determine non-link-local IP address")
 }
 
 // uploadCmd represents the upload command
 var uploadCmd = &cobra.Command{
 	Use:   "upload [file path]",
 	Short: "Uploads a file to the floppy daemon",
-	Long:  `Calls to the floppy daemon to upload a file that will be availible to all clients`,
+	Long:  `Calls to the floppy daemon to upload a file that will be available to all clients`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		userFilePath := args[0]
@@ -136,16 +153,20 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		request, err := http.NewRequest("POST", "http://localhost:8080/upload", body)
+		localIP, err := GetLocalIP()
+		if err != nil {
+			fmt.Printf("Failed to get local IP: %v\n", err)
+			return
+		}
+
+		request, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8080/upload", localIP), body)
 		if err != nil {
 			fmt.Printf("Failed to create request %v\n", err)
 			return
 		}
 		request.Header.Add("Content-Type", writer.FormDataContentType())
 
-		client := &http.Client{
-			// Timeout: 30 * time.Second,
-		}
+		client := &http.Client{}
 
 		response, err := client.Do(request)
 		if err != nil {
