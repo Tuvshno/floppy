@@ -1,0 +1,24 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+#drop-zone {
+    width: 400px;
+    height: 200px;
+    border: 2px dashed #007bff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: #007bff;
+    transition: background-color 0.3s;
+}
+
+#drop-zone.drag-over {
+    background-color: rgba(0, 123, 255, 0.1);
+}
