@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -153,20 +154,30 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		localIP, err := GetLocalIP()
+		serverIP, err := cmd.Flags().GetString("server-ip")
 		if err != nil {
-			fmt.Printf("Failed to get local IP: %v\n", err)
+			fmt.Printf("Failed to get server IP flag: %v\n", err)
 			return
 		}
 
-		request, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8080/upload", localIP), body)
+		if serverIP == "" {
+			serverIP, err = GetLocalIP()
+			if err != nil {
+				fmt.Printf("Failed to get local IP: %v\n", err)
+				return
+			}
+		}
+
+		request, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8080/upload", serverIP), body)
 		if err != nil {
 			fmt.Printf("Failed to create request %v\n", err)
 			return
 		}
 		request.Header.Add("Content-Type", writer.FormDataContentType())
 
-		client := &http.Client{}
+		client := &http.Client{
+			Timeout: 30 * time.Second,
+		}
 
 		response, err := client.Do(request)
 		if err != nil {
@@ -195,6 +206,7 @@ func init() {
 	rootCmd.AddCommand(uploadCmd)
 
 	uploadCmd.Flags().Bool("wsl", false, "Specify if running on WSL to convert filepaths")
+	uploadCmd.Flags().String("server-ip", "", "Specify the server IP address manually")
 }
 
 // convertToWSLPath converts a Windows path to a WSL path
