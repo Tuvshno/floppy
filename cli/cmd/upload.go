@@ -52,6 +52,12 @@ var uploadCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		userFilePath := args[0]
 
+		remoteIP, err := cmd.Flags().GetString("ip")
+		if err != nil {
+			fmt.Printf("Failed to get flag value: %v\n", err)
+			return
+		}
+
 		isWSL, err := cmd.Flags().GetBool("wsl")
 		if err != nil {
 			fmt.Printf("Failed to get flag value: %v\n", err)
@@ -135,10 +141,15 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		serverAddr, err := network.DiscoverService()
-		if err != nil {
-			fmt.Printf("Failed to discover service: %v\n", err)
-			return
+		var serverAddr string
+		if remoteIP != "" {
+			serverAddr = remoteIP
+		} else {
+			serverAddr, err = network.DiscoverService()
+			if err != nil {
+				fmt.Printf("Failed to discover service: %v\n", err)
+				return
+			}
 		}
 
 		request, err := http.NewRequest("POST", fmt.Sprintf("http://%s/upload", serverAddr), body)
@@ -178,7 +189,7 @@ func init() {
 	rootCmd.AddCommand(uploadCmd)
 
 	uploadCmd.Flags().Bool("wsl", false, "Specify if running on WSL to convert filepaths")
-	uploadCmd.Flags().String("server-ip", "", "Specify the server IP address manually")
+	uploadCmd.Flags().String("ip", "", "Specify the server IP address manually")
 }
 
 // convertToWSLPath converts a Windows path to a WSL path

@@ -1,7 +1,5 @@
 package upload
 
-//upload/handler.go
-
 import (
 	"bytes"
 	"encoding/json"
@@ -10,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/tuvshno/floppy/daemon/types"
@@ -18,14 +15,14 @@ import (
 
 type Handler struct{}
 
-// Metadata holds the struct recieved from the client
+// Metadata holds the struct receives from the client
 type Metadata struct {
 	FilePath string `json:"file_path"`
 }
 
-// Upload recieves a POST request that uploads the given file inside the file form to the daemon
+// Upload receives a POST request that uploads the given file inside the file form to the daemon
 func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
-	log.Println("Recieved Upload Request ", r.Method)
+	log.Println("Received Upload Request ", r.Method)
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Failed to read form file", http.StatusInternalServerError)
@@ -34,9 +31,9 @@ func (h *Handler) Upload(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	filename := header.Filename
-	ext := filepath.Ext(filename)
+	//ext := filepath.Ext(filename)
 
-	out, err := os.Create("uploaded_file" + ext)
+	out, err := os.Create(filename)
 	if err != nil {
 		http.Error(w, "Failed to save new file", http.StatusInternalServerError)
 		return

@@ -1,20 +1,25 @@
 package main
 
-//server.go
-
 import (
+	"github.com/grandcat/zeroconf"
+	"github.com/tuvshno/floppy/daemon/storage"
 	"log"
 	"net/http"
-
-	"github.com/tuvshno/floppy/daemon/storage"
 )
 
 func handle(w http.ResponseWriter, r *http.Request) {
-	log.Println("Recieved Request")
-	w.Write([]byte("Hello from domain\n"))
+	log.Println("Received Request")
+	w.Write([]byte("Hello from daemon\n"))
 }
 
 func main() {
+	// Start the mDNS service
+	server, err := zeroconf.Register("FloppyDaemon", "_http._tcp", "local.", 8080, []string{"txtv=0", "lo=1", "la=2"}, nil)
+	if err != nil {
+		log.Fatalf("Failed to register mDNS service: %v", err)
+	}
+	defer server.Shutdown()
+
 	router := http.NewServeMux()
 	router.HandleFunc("/", handle)
 
@@ -27,11 +32,11 @@ func main() {
 	log.Print("Initiated DB")
 	loadRoutes(router, db)
 
-	server := http.Server{
+	serverHTTP := http.Server{
 		Addr:    ":8080",
 		Handler: router,
 	}
 
 	log.Println("Server Listening on Port :8080")
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(serverHTTP.ListenAndServe())
 }

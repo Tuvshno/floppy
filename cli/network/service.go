@@ -20,9 +20,10 @@ func DiscoverService() (string, error) {
 
 	go func(results <-chan *zeroconf.ServiceEntry) {
 		for entry := range results {
-			fmt.Printf("Found service: %s\n", entry.ServiceRecord.Instance)
+			fmt.Printf("\nFound service: %s\n", entry.ServiceRecord.Instance)
 			if len(entry.AddrIPv4) > 0 {
 				serverAddr = fmt.Sprintf("%s:%d", entry.AddrIPv4[0], entry.Port)
+				fmt.Printf("%s:%d \n", entry.AddrIPv4[0], entry.Port)
 				break
 			}
 		}
