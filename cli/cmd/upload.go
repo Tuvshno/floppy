@@ -2,9 +2,7 @@ package cmd
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -15,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grandcat/zeroconf"
 	"github.com/spf13/cobra"
+	"github.com/tuvshno/floppy/cli/network"
 )
 
 // Progress Reader is a struct that implements the io.Reader to show progress of an upload
@@ -43,42 +41,6 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 func (pr *ProgressReader) updateProgress() {
 	percentage := float64(pr.Current) / float64(pr.FileSize) * 100
 	fmt.Printf("\rUploading to buffer... %d/%d bytes (%.2f%%)", pr.Current, pr.FileSize, percentage)
-}
-
-// discoverService uses mDNS to find the FloppyDaemon service
-func discoverService() (string, error) {
-	resolver, err := zeroconf.NewResolver(nil)
-	if err != nil {
-		return "", fmt.Errorf("Failed to initialize resolver: %v", err)
-	}
-
-	entries := make(chan *zeroconf.ServiceEntry)
-	var serverAddr string
-
-	go func(results <-chan *zeroconf.ServiceEntry) {
-		for entry := range results {
-			fmt.Printf("Found service: %s\n", entry.ServiceRecord.Instance)
-			if len(entry.AddrIPv4) > 0 {
-				serverAddr = fmt.Sprintf("%s:%d", entry.AddrIPv4[0], entry.Port)
-				break
-			}
-		}
-	}(entries)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
-	defer cancel()
-
-	err = resolver.Browse(ctx, "_http._tcp", "local.", entries)
-	if err != nil {
-		return "", fmt.Errorf("Failed to browse: %v", err)
-	}
-
-	<-ctx.Done()
-	if serverAddr == "" {
-		return "", errors.New("service discovery failed or timed out")
-	}
-
-	return serverAddr, nil
 }
 
 // uploadCmd represents the upload command
@@ -173,7 +135,7 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		serverAddr, err := discoverService()
+		serverAddr, err := network.DiscoverService()
 		if err != nil {
 			fmt.Printf("Failed to discover service: %v\n", err)
 			return

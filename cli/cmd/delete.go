@@ -1,12 +1,10 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/tuvshno/floppy/cli/network"
 	"io"
 	"net/http"
 	"time"
@@ -69,7 +67,13 @@ var deleteCmd = &cobra.Command{
 			return
 		}
 
-		request, err := http.NewRequest("DELETE", "http://localhost:8080/storage", bytes.NewBuffer(metadataJSON))
+		serverAddr, err := network.DiscoverService()
+		if err != nil {
+			fmt.Printf("Failed to discover service: %v\n", err)
+			return
+		}
+
+		request, err := http.NewRequest("DELETE", fmt.Sprintf("http://%s/storage", serverAddr), bytes.NewBuffer(metadataJSON))
 		if err != nil {
 			fmt.Printf("Failed to create request %v\n", err)
 			return

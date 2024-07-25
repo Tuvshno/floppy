@@ -6,6 +6,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tuvshno/floppy/cli/network"
 	"io"
 	"net/http"
 	"os"
@@ -21,7 +22,13 @@ var listCmd = &cobra.Command{
 	Short: "Lists the current files stored in the daemon",
 	Long:  `Calls to the floppy daemon to list the current files stored`,
 	Run: func(cmd *cobra.Command, args []string) {
-		request, err := http.NewRequest("GET", "http://localhost:8080/storage", nil)
+		serverAddr, err := network.DiscoverService()
+		if err != nil {
+			fmt.Printf("Failed to discover service: %v\n", err)
+			return
+		}
+
+		request, err := http.NewRequest("GET", fmt.Sprintf("http://%s/storage", serverAddr), nil)
 		if err != nil {
 			fmt.Printf("Failed to create request %v\n", err)
 		}
