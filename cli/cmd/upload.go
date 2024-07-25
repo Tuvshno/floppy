@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grandcat/zeroconf"
 	"github.com/spf13/cobra"
 )
 
@@ -41,25 +42,43 @@ func (pr *ProgressReader) Read(p []byte) (int, error) {
 // updateProgress prints the current progress of the upload to the terminal
 func (pr *ProgressReader) updateProgress() {
 	percentage := float64(pr.Current) / float64(pr.FileSize) * 100
-	fmt.Printf("\rUploading... %d/%d bytes (%.2f%%)", pr.Current, pr.FileSize, percentage)
+	fmt.Printf("\rUploading to buffer... %d/%d bytes (%.2f%%)", pr.Current, pr.FileSize, percentage)
 }
 
-// GetLocalIP retrieves the non-loopback, non-link-local IP address of the host machine
-func GetLocalIP() (string, error) {
-	addrs, err := net.InterfaceAddrs()
+// discoverService uses mDNS to find the FloppyDaemon service
+func discoverService() (string, error) {
+	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Failed to initialize resolver: %v", err)
 	}
 
-	for _, address := range addrs {
-		if ipNet, ok := address.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
-			if ipNet.IP.To4() != nil && !ipNet.IP.IsLinkLocalUnicast() {
-				return ipNet.IP.String(), nil
+	entries := make(chan *zeroconf.ServiceEntry)
+	var serverAddr string
+
+	go func(results <-chan *zeroconf.ServiceEntry) {
+		for entry := range results {
+			fmt.Printf("Found service: %s\n", entry.ServiceRecord.Instance)
+			if len(entry.AddrIPv4) > 0 {
+				serverAddr = fmt.Sprintf("%s:%d", entry.AddrIPv4[0], entry.Port)
+				break
 			}
 		}
+	}(entries)
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	defer cancel()
+
+	err = resolver.Browse(ctx, "_http._tcp", "local.", entries)
+	if err != nil {
+		return "", fmt.Errorf("Failed to browse: %v", err)
 	}
 
-	return "", errors.New("unable to determine non-link-local IP address")
+	<-ctx.Done()
+	if serverAddr == "" {
+		return "", errors.New("service discovery failed or timed out")
+	}
+
+	return serverAddr, nil
 }
 
 // uploadCmd represents the upload command
@@ -154,21 +173,13 @@ var uploadCmd = &cobra.Command{
 			return
 		}
 
-		serverIP, err := cmd.Flags().GetString("server-ip")
+		serverAddr, err := discoverService()
 		if err != nil {
-			fmt.Printf("Failed to get server IP flag: %v\n", err)
+			fmt.Printf("Failed to discover service: %v\n", err)
 			return
 		}
 
-		if serverIP == "" {
-			serverIP, err = GetLocalIP()
-			if err != nil {
-				fmt.Printf("Failed to get local IP: %v\n", err)
-				return
-			}
-		}
-
-		request, err := http.NewRequest("POST", fmt.Sprintf("http://%s:8080/upload", serverIP), body)
+		request, err := http.NewRequest("POST", fmt.Sprintf("http://%s/upload", serverAddr), body)
 		if err != nil {
 			fmt.Printf("Failed to create request %v\n", err)
 			return
@@ -198,7 +209,6 @@ var uploadCmd = &cobra.Command{
 		}
 
 		fmt.Printf("\n%s\n", string(respBody))
-
 	},
 }
 
