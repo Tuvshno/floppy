@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// discoverService uses mDNS to find the FloppyDaemon service
+// DiscoverService uses mDNS to find the FloppyDaemon service
 func DiscoverService() (string, error) {
 	resolver, err := zeroconf.NewResolver(nil)
 	if err != nil {
@@ -32,6 +32,7 @@ func DiscoverService() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 
+	fmt.Println("Browsing for services...")
 	err = resolver.Browse(ctx, "_http._tcp", "local.", entries)
 	if err != nil {
 		return "", fmt.Errorf("Failed to browse: %v", err)
@@ -39,7 +40,7 @@ func DiscoverService() (string, error) {
 
 	<-ctx.Done()
 	if serverAddr == "" {
-		return "", errors.New("service discovery failed or timed out")
+		return "", errors.New("Service discovery failed or timed out")
 	}
 
 	return serverAddr, nil
