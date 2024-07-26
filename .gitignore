@@ -20,3 +20,6 @@
 *.svg
 *.webp
 *.ico
+
+
+desktop_ui/node_modules
